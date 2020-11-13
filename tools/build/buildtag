@@ -1,0 +1,64 @@
+#!/bin/sh
+
+export PATH=$PATH:/home/jenkins/jenkins/workspace/gsmp_st/SmartHippo_TestFrame/tools/build
+export tmpfile="tmp.$$"
+export tmpfile1="tmp1.$$"
+HOMEDIR=$(pwd)
+
+
+
+# Get boot and kernel version
+sed 's/=[ ]*/=/' ${HOMEDIR}/versionlog > ${tmpfile}
+CURRENT_VERSION=$(awk -F= '/CURRENT_VERSION/{print $2}' ${tmpfile})
+echo ${CURRENT_VERSION} > ${tmpfile}
+CURRENT_VERSION=$(cat ${tmpfile}|tr -d ["\n"])
+
+
+case $1 in
+  cornerstone) echo "Build cornerstone project"
+       PROJECTNAME="cornerstone"      
+       PROJECTMACRO="CONFIG_MACH_CORNERSTONE"
+       ;;
+  prism)  echo "Build prism project"
+       PROJECTNAME="prism"
+       PROJECTMACRO="CONFIG_MACH_PRISM"
+       ;;
+  cttag)  echo "Create the tag for the gsop"
+       echo ${CURRENT_VERSION}
+              
+       
+       DATE=$(date +%Y%m%d)
+       git tag ${CURRENT_VERSION}
+       git push origin ${CURRENT_VERSION}   
+            
+       rm -f ${tmpfile}
+       unset tmpfile
+       exit 0
+       ;;       
+      *)  echo "Please choose the correct transaction"
+          exit 1
+          ;;
+esac
+
+
+CURRENT_VERSION=${CURRENT_VERSION}-${RELEASEFLAG}
+BOOTVER=2012.10-SmartHippo_TestFrame-${CURRENT_VERSION}
+BOOTVER=$(echo ${BOOTVER})
+KERNELVER=SmartHippo_TestFrame-${CURRENT_VERSION}
+KERNELVER=$(echo ${KERNELVER})
+
+
+OUTPUTDIR=${OUTPUTDIR}/${PROJECTNAME}/${PROJECTNAME}_${RELEASEFLAG}
+if [ -d ${OUTPUTDIR} ];then
+    rm -rf ${OUTPUTDIR}
+fi
+
+
+LOGFILE="${OUTPUTDIR}/gsopbuild.log"
+
+#delete tmp files
+cd ${HOMEDIR}
+rm -f ${tmpfile}
+unset tmpfile
+rm -f ${tmpfile1}
+unset tmpfile1
